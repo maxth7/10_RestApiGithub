@@ -127,6 +127,7 @@
             <Form>Form1</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <None Include="ModelSupport_RestGitHub05\default.txaPackage"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -149,6 +150,12 @@
                 </Source>
             </Delphi.Personality>
             <Deployment Version="5">
+                <DeployFile LocalName="ModelSupport_RestGitHub05\default.txaPackage" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Win32\Debug\RestGitHub05.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>RestGitHub05.exe</RemoteName>
@@ -1100,6 +1107,7 @@
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>
+            <ModelSupport>True</ModelSupport>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>

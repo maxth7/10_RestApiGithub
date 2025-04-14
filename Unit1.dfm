@@ -11,8 +11,6 @@ object Form1: TForm1
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
-  OnClose = FormClose
-  OnCreate = FormCreate
   TextHeight = 15
   object Label1: TLabel
     Left = 7
@@ -81,7 +79,7 @@ object Form1: TForm1
     Text = 'maxth7'
   end
   object ListBoxRepo: TListBox
-    Left = 7
+    Left = 8
     Top = 56
     Width = 162
     Height = 377
@@ -89,7 +87,6 @@ object Form1: TForm1
     ItemHeight = 15
     TabOrder = 1
     OnClick = ListBoxRepoClick
-    OnMouseUp = ListBoxRepoMouseUp
   end
   object ListBoxFiles: TListBox
     Left = 175

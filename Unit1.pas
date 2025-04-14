@@ -9,46 +9,76 @@ uses
   System.NetEncoding, Vcl.ComCtrls,
   System.IniFiles,
   System.IOUtils;
+
+const
+  INI_SECTION_WINDOW = 'Window';
+  INI_KEY_LEFT       = 'Left';
+  INI_KEY_TOP        = 'Top';
+  INI_KEY_WIDTH      = 'Width';
+  INI_KEY_HEIGHT     = 'Height';
+
+  INI_SECTION_USER = 'User';
+  INI_KEY_USERNAME = 'Username';
+  DEFAULT_USERNAME = 'maxth7';
+
+  DEFAULT_WINDOW_LEFT = 100;
+  DEFAULT_WINDOW_TOP  = 100;
+  DEFAULT_WINDOW_WIDTH  = 638;
+  DEFAULT_WINDOW_HEIGHT = 479;
+
+  MSG_SETTINGS_FILE_NOT_FOUND = 'Settings file not found. Using default settings.';
+  MSG_FILE_IS_NOT_SELECTED    = 'The file is not selected.';
+  MSG_FILE_LIST_IS_EMPTY      = 'The file list is empty.';
+  MSG_NOTHING_IS_SELECTED     =  'Nothing is selected!';
+
+  MSG_FILE_DEDUG_LOG='debug.log';
+   const
+        GitHubAPIUrl = 'https://api.github.com/';
 type
   TForm1 = class(TForm)
     EditUsername: TEdit;
-    Label1: TLabel;
-    ListBoxRepo: TListBox;
-    LabelRepo: TLabel;
+    Label1:       TLabel;
+    LabelRepo:    TLabel;
+    LabelFiles:   TLabel;
+    LabelContet:  TLabel;
+
+    ListBoxRepo:  TListBox;
     ListBoxFiles: TListBox;
-    LabelFiles: TLabel;
+
     ButtonGetRepo: TButton;
-    LabelContet: TLabel;
+
     RichEditFileContent: TRichEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    const
-        GitHubAPIUrl = 'https://api.github.com/';
-type
- TAppSettings = record
-   WindowLeft: Integer;
-   WindowTop: Integer;
-   WindowWidth: Integer;
-   WindowHeight: Integer;
-   Username: string;
-end;
+
+    type
+       TAppSettings = record
+       WindowLeft:  Integer;
+       WindowTop:   Integer;
+       WindowWidth: Integer;
+       WindowHeight:Integer;
+       Username:    string;
+    end ;
+
     procedure ButtonGetRepoClick(Sender: TObject);
     procedure ListBoxRepoClick(Sender: TObject);
     procedure ListBoxFilesClick(Sender: TObject);
     procedure ListBoxRepoMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+
   private
    procedure GetGitHubRepos(const UserName: string);
    procedure GetFilesForUserInRepo(const UserName: string; const RepoName: string);
    procedure GetReadmeContent(const UserName: string;const Filename: string);
-   procedure SaveSettings(const Settings: TAppSettings);
-   procedure LoadSettings(var Settings: TAppSettings);
+
    function GetSelectedItem(ListBox: TListBox): string;
    function ExecuteGitHubAPIRequest(const Resource: string;
                                var ResponseContent: string): Integer;
    procedure LogError(const Message: string);
    function IsStringEmpty(const S: string): Boolean;
 
+   procedure SaveSettings(const Settings: TAppSettings);
+   procedure LoadSettings(var Settings: TAppSettings);
 
   public
   end;
@@ -63,20 +93,26 @@ implementation
 
 procedure TForm1.ButtonGetRepoClick(Sender: TObject);
 begin
+ButtonGetRepo.Enabled:=False;
+ LogError('Start ButtonGetRepoClick ');
   try
    GetGitHubRepos(TrimRight(EditUsername.Text));
    except
     on E: Exception do
+      begin
+      LogError('Error in ButtonGetRepoClick: ' + E.Message);
       ShowMessage('Error: ' + E.Message);
+    end;
   end;
+  ButtonGetRepo.Enabled:=true;
 end;
 procedure TForm1.GetGitHubRepos(const UserName: string);
 var
-  RESTClient: TRESTClient;
-  RESTRequest: TRESTRequest;
+  RESTClient:   TRESTClient;
+  RESTRequest:  TRESTRequest;
   RESTResponse: TRESTResponse;
-  JSONValue: TJSONValue;
-  RepoArray: TJSONArray;
+  JSONValue:    TJSONValue;
+  RepoArray:    TJSONArray;
   i: Integer;
 begin
 
@@ -118,6 +154,7 @@ begin
     RESTClient.Free;
     end;
 end;
+
  function TForm1.GetSelectedItem(ListBox: TListBox): string;
 var
   SelectedIndex: Integer;
@@ -130,7 +167,7 @@ begin
   end
   else
   begin
-    ShowMessage('Nothing is selected!');
+    ShowMessage(MSG_NOTHING_IS_SELECTED );
   end;
 end;
 //---1-----------------------------------
@@ -152,8 +189,8 @@ var
 begin
   if ListBoxRepo.Items.Count = 0 then
   begin
-    ShowMessage('You clicked on an empty list. Click the "Get Repository Names" button.');
-    Exit;
+   ShowMessage(MSG_FILE_LIST_IS_EMPTY);
+   Exit;
   end;
 
   SelectedItem := GetSelectedItem(ListBoxRepo);
@@ -163,11 +200,12 @@ begin
     GetFilesForUserInRepo(TrimRight(EditUsername.Text), SelectedItem);
   end;
 end;
+
   procedure TForm1.ListBoxRepoMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
 if ListBoxRepo.count=0 then
-   ShowMessage('You clicked on an empty list. Click the "Get Repository Names" button.');
+   ShowMessage(MSG_FILE_LIST_IS_EMPTY);
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -186,17 +224,17 @@ var
   AppSettings: TAppSettings;
 begin
   LoadSettings(AppSettings);
-  SetBounds(AppSettings.WindowLeft, AppSettings.WindowTop, AppSettings.WindowWidth, AppSettings.WindowHeight);
+  SetBounds(AppSettings.WindowLeft, AppSettings.WindowTop,
+           AppSettings.WindowWidth, AppSettings.WindowHeight);
 end;
 //---2-----------------------------------
-function TForm1.ExecuteGitHubAPIRequest(const Resource:
-                           string; var ResponseContent: string): Integer;
+function TForm1.ExecuteGitHubAPIRequest(const Resource: string; var ResponseContent: string): Integer;
 var
   RESTClient: TRESTClient;
   RESTRequest: TRESTRequest;
   RESTResponse: TRESTResponse;
 begin
-  RESTClient := TRESTClient.Create(GitHubAPIUrl); // Используем константу GitHubAPIUrl
+  RESTClient := TRESTClient.Create(GitHubAPIUrl);
   RESTRequest := TRESTRequest.Create(RESTClient);
   RESTResponse := TRESTResponse.Create(RESTRequest);
   try
@@ -213,6 +251,7 @@ begin
     RESTClient.Free;
   end;
 end;
+
 procedure TForm1.GetFilesForUserInRepo(const UserName: string; const RepoName: string);
 var
   ResponseContent: string;
@@ -242,16 +281,37 @@ begin
   end
   else
   begin
+    LogError('Error in GetFilesForUserInRepo: ' + IntToStr(StatusCode)
+      + ' - ' + ResponseContent);
     ListBoxFiles.AddItem('Error receiving files: '
       + IntToStr(StatusCode)
       + ' - ' + ResponseContent, nil);
   end;
+end;
+//
+procedure OutputDebugString(const S: string);
+var
+  LogFile: TextFile;
+begin
+  // Вывод в файл журнала
+  AssignFile(LogFile,MSG_FILE_DEDUG_LOG );
+  if FileExists(MSG_FILE_DEDUG_LOG) then
+    Append(LogFile)
+  else
+    Rewrite(LogFile);
+  try
+    WriteLn(LogFile, DateTimeToStr(Now) + ': ' + S);
+  finally
+    CloseFile(LogFile);
+  end;
+
 end;
 
 procedure TForm1.LogError(const Message: string);
 begin
   OutputDebugString(PChar(Message));
 end;
+
 function TForm1.IsStringEmpty(const S: string): Boolean;
 begin
   Result := (S = '') or (Length(S) = 0);
@@ -260,10 +320,10 @@ end;
 procedure TForm1.GetReadmeContent(const UserName: string; const FileName: string);
 var
   ResponseContent: string;
-  StatusCode: Integer;
-  JSONValue: TJSONValue;
-  Base64Content: string;
-  DecodedContent: string;
+  StatusCode:      Integer;
+  JSONValue:       TJSONValue;
+  Base64Content:   string;
+  DecodedContent:  string;
 begin
   StatusCode := ExecuteGitHubAPIRequest(Format('repos/%s/%s/contents/%s', [UserName, RepoName, FileName]), ResponseContent);
 
@@ -274,9 +334,7 @@ begin
       if Assigned(JSONValue) then
       begin
         Base64Content := JSONValue.GetValue<string>('content');
-//        if notIsNullOrEmpty(Base64Content) then
-//         if not TStringHelper.IsNullOrEmpty(Base64Content) then // Используем TStringHelper.IsNullOrEmpty
-        if not IsStringEmpty(Base64Content) then // Используем IsStringEmpty
+        if not IsStringEmpty(Base64Content) then
         begin
           try
             DecodedContent := TNetEncoding.Base64.Decode(Base64Content);
@@ -310,7 +368,7 @@ begin
   end;
 end;
 // 3-----------------------------
- procedure TForm1.SaveSettings(const Settings: TAppSettings);
+procedure TForm1.SaveSettings(const Settings: TAppSettings);
    var
      IniFile: TIniFile;
      FilePath: string;
@@ -318,39 +376,52 @@ end;
      FilePath := TPath.Combine(ExtractFilePath(ParamStr(0)), 'AppSettings.ini');
      IniFile := TIniFile.Create(FilePath);
      try
-       IniFile.WriteInteger('Window', 'Left', Settings.WindowLeft);
-       IniFile.WriteInteger('Window', 'Top', Settings.WindowTop);
-       IniFile.WriteInteger('Window', 'Width', Settings.WindowWidth);
-       IniFile.WriteInteger('Window', 'Height', Settings.WindowHeight);
-       IniFile.WriteString( 'User',   'Username', TrimRight(EditUsername.Text));
+       IniFile.WriteInteger(INI_SECTION_WINDOW, INI_KEY_LEFT, Settings.WindowLeft);
+       IniFile.WriteInteger(INI_SECTION_WINDOW, INI_KEY_TOP, Settings.WindowTop);
+       IniFile.WriteInteger(INI_SECTION_WINDOW, INI_KEY_WIDTH, Settings.WindowWidth);
+       IniFile.WriteInteger(INI_SECTION_WINDOW, INI_KEY_HEIGHT, Settings.WindowHeight);
+       IniFile.WriteString(INI_SECTION_USER, INI_KEY_USERNAME, TrimRight(EditUsername.Text));
      except
        on E: Exception do
          LogError('Error saving settings: ' + E.Message);
-     end;
+         end;
 
        IniFile.Free;
 
    end;
- procedure TForm1.LoadSettings(var Settings: TAppSettings);
+
+procedure TForm1.LoadSettings(var Settings: TAppSettings);
    var
      IniFile: TIniFile;
      FilePath: string;
    begin
-       FilePath := TPath.Combine(ExtractFilePath(ParamStr(0)), 'AppSettings.ini');
-       IniFile := TIniFile.Create('AppSettings.ini');
-   if not FileExists(FilePath) then
-    begin
-     ShowMessage('Settings file not found. Using default settings.');
-   end;
-      IniFile := TIniFile.Create(FilePath);
-     try
-       Settings.WindowLeft :=  IniFile.ReadInteger('Window', 'Left', 100);
-       Settings.WindowTop :=   IniFile.ReadInteger('Window', 'Top', 100);
-       Settings.WindowWidth:=  IniFile.ReadInteger('Window', 'Width', 638);
-       Settings.WindowHeight :=IniFile.ReadInteger('Window', 'Height', 479);
-       EditUsername.Text :=    IniFile.ReadString( 'User',   'Username', 'maxth7');
-     finally
-       IniFile.Free;
+     FilePath := TPath.Combine(ExtractFilePath(ParamStr(0)), 'AppSettings.ini');
+     Settings.WindowLeft := DEFAULT_WINDOW_LEFT;
+     Settings.WindowTop := DEFAULT_WINDOW_TOP;
+     Settings.WindowWidth := DEFAULT_WINDOW_WIDTH;
+     Settings.WindowHeight := DEFAULT_WINDOW_HEIGHT;
+     EditUsername.Text := DEFAULT_USERNAME;
+
+     if not FileExists(FilePath) then
+     begin
+       ShowMessage(MSG_SETTINGS_FILE_NOT_FOUND);
+       Exit;
      end;
+
+     IniFile := TIniFile.Create(FilePath);
+     try
+       Settings.WindowLeft :=  IniFile.ReadInteger(INI_SECTION_WINDOW, INI_KEY_LEFT, DEFAULT_WINDOW_LEFT);
+       Settings.WindowTop :=   IniFile.ReadInteger(INI_SECTION_WINDOW, INI_KEY_TOP, DEFAULT_WINDOW_TOP);
+       Settings.WindowWidth:=  IniFile.ReadInteger(INI_SECTION_WINDOW, INI_KEY_WIDTH, DEFAULT_WINDOW_WIDTH);
+       Settings.WindowHeight :=IniFile.ReadInteger(INI_SECTION_WINDOW, INI_KEY_HEIGHT, DEFAULT_WINDOW_HEIGHT);
+       EditUsername.Text :=    IniFile.ReadString(INI_SECTION_USER, INI_KEY_USERNAME, DEFAULT_USERNAME);
+     except
+       on E: Exception do
+         LogError('Error loading settings: ' + E.Message);
+         end;
+
+       IniFile.Free;
+
    end;
+
 end.
